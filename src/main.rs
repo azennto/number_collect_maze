@@ -1,8 +1,11 @@
-use rand::Rng;
+use rand::{random, Rng};
+
+type ScoreType = isize;
 
 const H: usize = 3;
 const W: usize = 4;
 const END_TURN: usize = 4;
+const INF: ScoreType = 1e9 as isize;
 
 #[derive(Debug, Clone)]
 struct Coord {
@@ -22,6 +25,7 @@ struct MazeState {
     turn_: usize,
     character_: Coord,
     game_score_: usize,
+    evaluated_score_: ScoreType,
 }
 
 impl MazeState {
@@ -51,6 +55,7 @@ impl MazeState {
             turn_: 0,
             character_: character_,
             game_score_: 0,
+            evaluated_score_: 0,
         }
     }
     fn isDone(&self) -> bool {
@@ -96,6 +101,9 @@ impl MazeState {
             println!("");
         }
     }
+    fn evaluateScore(&mut self) {
+        self.evaluated_score_ = self.game_score_ as isize;
+    }
 }
 
 fn randomAction(state: &MazeState) -> usize {
@@ -104,17 +112,51 @@ fn randomAction(state: &MazeState) -> usize {
     legal_actions[rng.gen_range(0..legal_actions.len())]
 }
 
+fn greedyAction(state: &MazeState) -> usize {
+    let legal_actions = state.legalActions();
+    let mut best_score: ScoreType = -INF;
+    let mut best_action: isize = -1;
+    for &action in &legal_actions {
+        let mut now_state = state.clone();
+        now_state.advance(action);
+        now_state.evaluateScore();
+        if now_state.evaluated_score_ > best_score {
+            best_score = now_state.evaluated_score_;
+            best_action = action as isize;
+        }
+    }
+    best_action as usize
+}
+
 fn playGame(seed: Option<u64>) -> usize {
     let mut state = MazeState::new(seed);
     state.toString();
     while !state.isDone() {
         println!("");
-        state.advance(randomAction(&state));
+        state.advance(greedyAction(&state));
         state.toString();
     }
     state.game_score_
 }
 
+fn testAiScore(game_number: usize) -> f64 {
+    let mut score_mean = 0.0;
+    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(0);
+    for _ in 0..game_number {
+        let seed = rng.gen::<u64>();
+        let mut state = MazeState::new(Some(seed));
+
+        while !state.isDone() {
+            state.advance(greedyAction(&state))
+        }
+        let score = state.game_score_;
+        score_mean += score as f64;
+    }
+    score_mean /= game_number as f64;
+    println!("Score: {}", score_mean);
+    score_mean
+}
+
 fn main() {
-    playGame(Some(121321));
+    testAiScore(100);
 }
