@@ -242,6 +242,42 @@ fn beamSearchActionWithTimeThreshold(
     best_state.first_action_ as usize
 }
 
+fn chokudaiSearchAction(
+    state: &MazeState,
+    beam_width: usize,
+    beam_depth: usize,
+    beam_number: usize,
+) -> usize {
+    let mut beam = vec![BinaryHeap::new(); beam_depth + 1];
+    beam[0].push(state.clone());
+    for cnt in 0..beam_number {
+        for t in 0..beam_depth {
+            for i in 0..beam_width {
+                if beam[t].is_empty() {
+                    break;
+                }
+                let now_state = beam[t].pop().unwrap();
+                let legal_actions = now_state.legalActions();
+                for &actions in &legal_actions {
+                    let mut next_state = now_state.clone();
+                    next_state.advance(actions);
+                    next_state.evaluateScore();
+                    if t == 0 {
+                        next_state.first_action_ = actions as isize;
+                    }
+                    beam[t + 1].push(next_state);
+                }
+            }
+        }
+    }
+    for now_beam in beam.iter().rev() {
+        if !now_beam.is_empty() {
+            return now_beam.peek().unwrap().first_action_ as usize;
+        }
+    }
+    return 0;
+}
+
 fn playGame(seed: Option<u64>) -> usize {
     let mut state = MazeState::new(seed);
     state.toString();
@@ -261,7 +297,7 @@ fn testAiScore(game_number: usize) -> f64 {
         let mut state = MazeState::new(Some(seed));
 
         while !state.isDone() {
-            state.advance(beamSearchActionWithTimeThreshold(&state, 5, 10))
+            state.advance(chokudaiSearchAction(&state, 1, END_TURN, 2))
         }
         let score = state.game_score_;
         score_mean += score as f64;
