@@ -11,3 +11,7 @@ rand = "0.8.5"
 [[bin]]
 name = "number_collect_maze"
 path = "src/number_collect_maze.rs"
+
+[[bin]]
+name = "auto_number_collect_maze"
+path = "src/auto_number_collect_maze.rs"
