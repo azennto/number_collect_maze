@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
+
+[[bin]]
+name = "number_collect_maze"
+path = "src/number_collect_maze.rs"
